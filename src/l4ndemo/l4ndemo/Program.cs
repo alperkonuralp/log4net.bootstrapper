@@ -17,6 +17,7 @@ namespace l4ndemo
             var loggerRepository = LogManager.CreateRepository(Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly(),
                  typeof(Hierarchy)) as Hierarchy;
 
+            loggerRepository.ResetConfiguration();
 
             var ca = new ConsoleAppender()
             {
