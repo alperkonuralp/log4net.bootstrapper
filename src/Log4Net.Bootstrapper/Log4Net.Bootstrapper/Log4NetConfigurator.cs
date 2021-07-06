@@ -1,128 +1,97 @@
-﻿using Log4Net.Bootstrapper.Appender;
-using Log4Net.Bootstrapper.Logger;
+﻿using log4net;
+using log4net.Appender;
+using log4net.Config;
+using log4net.Repository;
+using log4net.Repository.Hierarchy;
+using log4net.Util;
+using Log4Net.Bootstrapper.Appender;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Xml.Linq;
 
 namespace Log4Net.Bootstrapper
 {
     internal class Log4NetConfigurator : ILog4NetConfigurator
     {
-        public Dictionary<string, IAppenderConfig> Appenders { get; } = new Dictionary<string, IAppenderConfig>();
-        public Dictionary<string, ILogger> Loggers { get; } = new Dictionary<string, ILogger>();
-        public IRootLogger Root { get; }
-        public bool? Log4NetDebugMode { get; private set; } = null;
+        private Hierarchy _loggerRepository;
+        private ILog4NetBootstrapper _bootstrapper;
+        private RootLoggerBuilder _rootLoggerBuilder;
 
-        public Log4NetConfigurator()
+        public Log4NetConfigurator(ILog4NetBootstrapper bootstrapper)
         {
-            Root = new RootLogger(this);
+            _bootstrapper = bootstrapper;
+            Reset();
         }
 
-        public IConsoleAppenderConfig AddConsoleAppender(string name)
+        internal Assembly RepositoryAssembly => _bootstrapper.RepositoryAssembly;
+
+
+        public RootLoggerBuilder Root => _rootLoggerBuilder;
+
+
+
+        public ILog4NetConfigurator Reset()
         {
-            if (Appenders.ContainsKey(name) && Appenders[name] is IConsoleAppenderConfig console)
+            if (_loggerRepository == null)
+                _loggerRepository = LogManager.CreateRepository(RepositoryAssembly ?? Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly(),
+                 typeof(Hierarchy)) as Hierarchy;
+            else
             {
-                return console;
+                _loggerRepository.ResetConfiguration();
+                _loggerRepository = LogManager.CreateRepository(RepositoryAssembly ?? Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly(),
+                 typeof(Hierarchy)) as Hierarchy;
             }
 
-            var a = new ConsoleAppenderConfig(name);
-            Appenders[name] = a;
-            return a;
+            _rootLoggerBuilder = new RootLoggerBuilder(this, _loggerRepository);
+
+            return this;
         }
-
-        public IDebugAppenderConfig AddDebugAppender(string name)
-        {
-            if (Appenders.ContainsKey(name) && Appenders[name] is IDebugAppenderConfig console)
-            {
-                return console;
-            }
-
-            var a = new DebugAppenderConfig(name);
-            Appenders[name] = a;
-            return a;
-        }
-
-        public IRollingLogFileAppenderConfig AddRollingLogFileAppender(string name, string fileName)
-        {
-            if (Appenders.ContainsKey(name) && Appenders[name] is IRollingLogFileAppenderConfig console)
-            {
-                return console;
-            }
-
-            var a = new RollingLogFileAppenderConfig(name, fileName);
-            Appenders[name] = a;
-            return a;
-        }
-
 
         public ILog4NetConfigurator SetLog4NetDebugMode(bool? debug = null)
         {
-            Log4NetDebugMode = debug;
+            LogLog.InternalDebugging = debug ?? false;
             return this;
         }
-        public string GenerateToString()
-        {
-            XDocument doc = Generate();
 
-            return doc.ToString();
+        public ConsoleAppenderBuilder CreateConsoleAppender(string name, string patternLayoutPattern = null)
+        {
+            var cab = new ConsoleAppenderBuilder(name, patternLayoutPattern);
+
+            return cab;
+        }
+        public DebugAppenderBuilder CreateDebugAppender(string name, string patternLayoutPattern = null)
+        {
+            var cab = new DebugAppenderBuilder(name, patternLayoutPattern);
+
+            return cab;
         }
 
-        public XDocument Generate()
+        public void Initialize()
         {
-            var el = new XElement("log4net");
+            var appenders = new List<IAppender>();
 
-            if (Log4NetDebugMode.HasValue)
+            var rootAppenders = Root.AppenderBuilders.Select(x => x.Appender).ToArray();
+            foreach (AppenderSkeleton item in rootAppenders)
             {
-                el.Add(new XAttribute("debug", Log4NetDebugMode));
+                if (appenders.Contains(item)) continue;
+                item.ActivateOptions();
+                appenders.Add(item);
             }
 
-            el.Add(Root.Generate());
-
-            if (Loggers.Count > 0)
+            var loggers = _loggerRepository.GetCurrentLoggers();
+            foreach (Logger logger in loggers)
             {
-                foreach (var logger in Loggers.Values)
+                foreach (AppenderSkeleton item in logger.Appenders)
                 {
-                    el.Add(logger.Generate());
+                    if (appenders.Contains(item)) continue;
+                    item.ActivateOptions();
+                    appenders.Add(item);
                 }
             }
 
-            if (Appenders.Count > 0)
-            {
-                foreach (var appender in Appenders.Values)
-                {
-                    el.Add(appender.Generate());
-                }
-            }
-
-            var xdoc = new XDocument(el);
-            return xdoc;
-        }
-
-        public ILogger AddLogger(string name)
-        {
-            if (Loggers.ContainsKey(name))
-            {
-                return Loggers[name];
-            }
-            var logger = new Log4Net.Bootstrapper.Logger.Logger(name, this);
-            Loggers[name] = logger;
-            return logger;
-        }
-
-        public ILog4NetConfigurator RemoveAppender(string name)
-        {
-            if (Appenders.ContainsKey(name))
-                Appenders.Remove(name);
-
-            return this;
-        }
-
-        public ILog4NetConfigurator RemoveLogger(string name)
-        {
-            if (Loggers.ContainsKey(name))
-                Loggers.Remove(name);
-
-            return this;
+            BasicConfigurator.Configure(_loggerRepository, rootAppenders);
         }
     }
 }

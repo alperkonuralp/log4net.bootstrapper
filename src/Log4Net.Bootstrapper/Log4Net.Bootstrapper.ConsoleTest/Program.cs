@@ -12,22 +12,27 @@ namespace Log4Net.Bootstrapper.ConsoleTest
         {
             ILog4NetBootstrapper bootstrapper = new Log4NetBootstrapper();
 
+            var ca = bootstrapper.Configurator.CreateConsoleAppender("ConsoleAppender", "%date %level %message%newline");
+            var da = bootstrapper.Configurator.CreateDebugAppender("DebugAppender", "%date %level %message%newline");
+
             bootstrapper.Configurator
                 .SetLog4NetDebugMode(true)
                 .Root
                     .Level(Level.All)
-                    .AddConsoleAppender("ConsoleAppender", c=> c.SetPatternLayout("%date %level %message%newline"))
-                    .AddDebugAppender("DebugAppender", c => c.SetPatternLayout("%date %level %message%newline"))
-                    .AddRollingLogFileAppenderConfig("RollingLogFileAppender", "logs/webapi", 
-                        c=>c.SetDatePattern("_yyyyMMddHH.'log'")
-                            .SetPatternLayout("%-5p%d{ yyyy-MM-dd HH:mm:ss} [%thread] %m %exception %n%n"));
+                    .AddAppender(ca)
+                    .AddAppender(da)
+                    
+                    //.AddRollingLogFileAppenderConfig("RollingLogFileAppender", "logs/webapi", 
+                    //    c=>c.SetDatePattern("_yyyyMMddHH.'log'")
+                    //        .SetPatternLayout("%-5p%d{ yyyy-MM-dd HH:mm:ss} [%thread] %m %exception %n%n"))
+                    ;
 
-            bootstrapper.Configurator
-                .AddLogger("performans")
-                    .SetAdditivity(false)
-                    .Level(Level.All)
-                    .AddConsoleAppender("ConsoleAppender2", c => c.SetPatternLayout("%date %level %message%newline"))
-                    .AddDebugAppender("DebugAppender2", c => c.SetPatternLayout("%date %level %message%newline"));
+            //bootstrapper.Configurator
+            //    .AddLogger("performans")
+            //        .SetAdditivity(false)
+            //        .Level(Level.All)
+            //        .AddConsoleAppender("ConsoleAppender2", c => c.SetPatternLayout("%date %level %message%newline"))
+            //        .AddDebugAppender("DebugAppender2", c => c.SetPatternLayout("%date %level %message%newline"));
 
 
             //bootstrapper.Configurator
@@ -39,9 +44,9 @@ namespace Log4Net.Bootstrapper.ConsoleTest
             //        .SetPatternLayout("%date %level %message%newline");
 
 
-            string s = bootstrapper.Configurator.GenerateToString();
+            //string s = bootstrapper.Configurator.GenerateToString();
 
-            Console.WriteLine(s);
+            //Console.WriteLine(s);
 
             bootstrapper.Initialize();
 
@@ -49,17 +54,22 @@ namespace Log4Net.Bootstrapper.ConsoleTest
             logger.Debug("Merhaba");
 
 
+            ca = bootstrapper.Configurator.CreateConsoleAppender("ConsoleAppender", "%date %level %message%newline");
+
             bootstrapper.Configurator
+                .Reset()
                 .SetLog4NetDebugMode(false)
                 .Root
-                    .RemoveAppenderRef("DebugAppender")
-                    .RemoveAppenderRef("RollingLogFileAppender")
+                    .Level(Level.All)
+                    .AddAppender(ca)
+                    //.RemoveAppenderRef("DebugAppender")
+                    //.RemoveAppenderRef("RollingLogFileAppender")
                     ;
 
 
-            s = bootstrapper.Configurator.GenerateToString();
+            //s = bootstrapper.Configurator.GenerateToString();
 
-            Console.WriteLine(s);
+            //Console.WriteLine(s);
 
             bootstrapper.Initialize();
 
