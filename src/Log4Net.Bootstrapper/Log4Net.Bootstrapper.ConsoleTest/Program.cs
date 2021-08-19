@@ -14,12 +14,13 @@ namespace Log4Net.Bootstrapper.ConsoleTest
 
             var ca = bootstrapper.Configurator.CreateConsoleAppender("ConsoleAppender", "%date %level %message%newline");
             var da = bootstrapper.Configurator.CreateDebugAppender("DebugAppender", "%date %level %message%newline");
-
+            
             bootstrapper.Configurator
                 .SetLog4NetDebugMode(true)
                 .Root
                     .Level(Level.All)
-                    .AddAppender(ca)
+                    //.AddAppender(ca)
+                    .AddAppender("ConsoleAppender")
                     .AddAppender(da)
                     
                     //.AddRollingLogFileAppenderConfig("RollingLogFileAppender", "logs/webapi", 
@@ -62,9 +63,19 @@ namespace Log4Net.Bootstrapper.ConsoleTest
                 .Root
                     .Level(Level.All)
                     .AddAppender(ca)
+                    .AddAppender(
+                        bootstrapper.Configurator
+                            .CreateRollingFileAppender("RollingFileAppender", "%-5p%d{ yyyy-MM-dd HH:mm:ss} [%thread] %m %exception %n%n")
+                            .Encoding("utf-8")
+                            .FileName("logs/webapi")
+                            .DatePattern("_yyyyMMdd.'log'")
+                            .RollingStyle(log4net.Appender.RollingFileAppender.RollingMode.Date)
+                    )
                     //.RemoveAppenderRef("DebugAppender")
                     //.RemoveAppenderRef("RollingLogFileAppender")
                     ;
+
+
 
 
             //s = bootstrapper.Configurator.GenerateToString();

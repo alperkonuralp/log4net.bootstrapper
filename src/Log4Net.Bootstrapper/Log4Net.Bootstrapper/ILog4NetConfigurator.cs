@@ -1,9 +1,4 @@
-﻿using log4net.Appender;
-using log4net.Repository.Hierarchy;
-using Log4Net.Bootstrapper.Appender;
-using System;
-using System.Collections.Generic;
-using System.Xml.Linq;
+﻿using Log4Net.Bootstrapper.AppenderBuilders;
 
 namespace Log4Net.Bootstrapper
 {
@@ -18,5 +13,10 @@ namespace Log4Net.Bootstrapper
         ConsoleAppenderBuilder CreateConsoleAppender(string name, string patternLayoutPattern = null);
         DebugAppenderBuilder CreateDebugAppender(string name, string patternLayoutPattern = null);
         void Initialize();
+
+        IAppenderBuilder GetAppender(string name);
+        TAppenderBuilder GetAppender<TAppenderBuilder>(string name) 
+            where TAppenderBuilder : class, IAppenderBuilder;
+        RollingFileAppenderBuilder CreateRollingFileAppender(string name, string patternLayoutPattern = null);
     }
 }

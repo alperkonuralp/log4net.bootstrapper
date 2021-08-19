@@ -30,5 +30,11 @@ namespace Log4Net.Bootstrapper
             _appenderBuilders.Add(appender);
             return this;
         }
+
+        public RootLoggerBuilder AddAppender(string appenderName)
+        {
+            var appender = _log4NetConfigurator.GetAppender(appenderName);
+            return AddAppender(appender);
+        }
     }
 }

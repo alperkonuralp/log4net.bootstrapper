@@ -1,7 +1,7 @@
 ﻿using log4net.Appender;
 using log4net.Layout;
 
-namespace Log4Net.Bootstrapper
+namespace Log4Net.Bootstrapper.AppenderBuilders
 {
     public class ConsoleAppenderBuilder: IAppenderBuilder
     {
@@ -19,5 +19,17 @@ namespace Log4Net.Bootstrapper
         }
 
         public IAppender Appender => _consoleAppender;
+
+
+        public ConsoleAppenderBuilder Threshold(log4net.Core.Level threshold)
+        {
+            _consoleAppender.Threshold = threshold;
+            return this;
+        }
+        public ConsoleAppenderBuilder Layout(ILayout layout)
+        {
+            _consoleAppender.Layout = layout;
+            return this;
+        }
     }
 }
